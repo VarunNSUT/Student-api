@@ -23,6 +23,9 @@ func MustLoad() *config{ // in the functions named as must then do not return er
 	
 	var configPath string
 
+
+	// flags is used to write from one file to other , in this case we are using flags to parse the local.yaml to our configpath
+
 	if configPath == ""{
 		configPath = os.Getenv("CONFIG_PATH")
 

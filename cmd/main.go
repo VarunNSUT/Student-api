@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/VarunNSUT/Students-api/internal/config"
+	"github.com/VarunNSUT/Students-api/internal/http/handlers/student"
 )
 
 func main() {
@@ -29,10 +30,10 @@ func main() {
 	// go has a powerful net http package to make server or router instead of a third party package 
 	router := http.NewServeMux()
 
-	//http.ResponseWriter is an interface provided by Go's net/http package that lets your server write the HTTP response.
-	router.HandleFunc("/" , func(w http.ResponseWriter , r *http.Request){
-		w.Write([]byte("welcome to students api"))
-	})
+	router.HandleFunc("/api/student" , student.New())
+	router.HandleFunc("/api/student/" , student.New())
+
+	
 
 	// SETUP SERVER
 	server := http.Server {
@@ -40,7 +41,7 @@ func main() {
 		Handler: router,
 	}
 
-	fmt.Println("server started")
+	slog.Info("server started" , slog.String("address" , cfg.HTTPServer.Addr)) // this is the format of writing in slog 
 
 	done := make(chan os.Signal , 1) // we take signal as the channel input here from the os 
 
@@ -48,8 +49,8 @@ func main() {
 
 	go func (){ // this will run concurrently so when the execution arrives here then our code will end , so we resolve this issue by channels / synchronising
 		err := server.ListenAndServe()
-		if err != nil {
-			log.Fatal("failed to start the server")
+		if err != nil && err != http.ErrServerClosed{
+			log.Fatal("failed to start the server" , err)
 		}
 	}()
 	
@@ -62,10 +63,11 @@ func main() {
 	ctx , cancel :=context.WithTimeout(context.Background() , 5*time.Second) // pass an empty starting point that is the background function in this packae itsellf 
 	defer cancel() 
 	
-	err := server.Shutdown(ctx) // this method gracefully shuts down the server 
-	if err != nil {
-		slog.Error("failed to shutdown the server" , slog.String("error" , err.Error()))
+	if err := server.Shutdown(ctx) ; err != nil {
+		slog.Error("failed to shutdhown server" , slog.String("error", err.Error())) 
 	}
+	// this method gracefully shuts down the server 
+	
 
 	slog.Info("server shutdown successfully")
 }
